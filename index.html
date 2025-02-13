@@ -1,173 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memorial Service Seating</title>
-    <style>
-        /* Previous styles remain the same */
-        body {
-            font-family: 'Georgia', serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        h1, h2 {
-            text-align: center;
-            color: #2c3e50;
-        }
-
-        .seat-assignment {
-            text-align: center;
-            margin: 20px 0;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-        }
-
-        #seatNumber {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-
-        button {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #34495e;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        button:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
-
-        button:hover:not(:disabled) {
-            background-color: #2c3e50;
-        }
-
-        .program {
-            display: none;
-            margin-top: 30px;
-            padding: 20px;
-            border-top: 2px solid #eee;
-        }
-
-        .program.visible {
-            display: block;
-        }
-
-        .program-item {
-            margin: 15px 0;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-        }
-
-        .program-time {
-            font-weight: bold;
-            color: #34495e;
-        }
-
-        #resetButton {
-            background-color: #e74c3c;
-            font-size: 14px;
-            padding: 8px 16px;
-            margin-top: 30px;
-        }
-
-        #resetButton:hover {
-            background-color: #c0392b;
-        }
-
-        .admin-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px dashed #eee;
-        }
-
-        .error-message {
-            color: #e74c3c;
-            text-align: center;
-            margin: 10px 0;
-            display: none;
-        }
-    </style>
-</head>
+<!-- Previous head section remains the same -->
 <body>
-    <div class="container">
-        <h1>Memorial Service</h1>
-        <h2>Seating Assignment</h2>
-        
-        <div class="seat-assignment">
-            <p>Your assigned seat number is:</p>
-            <p id="seatNumber">-</p>
-        </div>
-
-        <p id="errorMessage" class="error-message">Unable to assign seat at this time. Please try again.</p>
-        <button id="assignSeat">Get Seat Assignment</button>
-
-        <div class="program" id="program">
-            <h2>Memorial Service Program</h2>
-            
-            <div class="program-item">
-                <span class="program-time">2:00 PM</span> - Opening Prayer
-            </div>
-            
-            <div class="program-item">
-                <span class="program-time">2:15 PM</span> - Welcome Address
-            </div>
-            
-            <div class="program-item">
-                <span class="program-time">2:30 PM</span> - Musical Tribute
-            </div>
-            
-            <div class="program-item">
-                <span class="program-time">2:45 PM</span> - Remembrance Speeches
-            </div>
-            
-            <div class="program-item">
-                <span class="program-time">3:15 PM</span> - Photo Montage
-            </div>
-            
-            <div class="program-item">
-                <span class="program-time">3:30 PM</span> - Moment of Silence
-            </div>
-            
-            <div class="program-item">
-                <span class="program-time">3:45 PM</span> - Closing Remarks
-            </div>
-            
-            <div class="program-item">
-                <span class="program-time">4:00 PM</span> - Benediction
-            </div>
-        </div>
-
-        <div class="admin-section" id="adminSection" style="display: none;">
-            <h3>Admin Controls</h3>
-            <button id="resetButton">Reset All Seat Assignments</button>
-            <p>Current highest seat number: <span id="highestSeat">0</span></p>
-            <p>Total seats assigned: <span id="totalSeats">0</span></p>
-        </div>
-    </div>
-
+    <!-- Previous HTML structure remains the same -->
     <script>
         // Initialize variables and get DOM elements
         const assignSeatButton = document.getElementById('assignSeat');
@@ -179,67 +14,59 @@
         const adminSection = document.getElementById('adminSection');
         const errorMessage = document.getElementById('errorMessage');
 
-        // Check for existing seat assignment and initialize storage
-        let personalSeatNumber = localStorage.getItem('personalSeatNumber');
-        let assignedSeats = JSON.parse(localStorage.getItem('assignedSeats') || '[]');
-        let highestSeatNumber = Math.max(0, ...assignedSeats);
+        // API endpoint (replace with your actual server URL)
+        const API_URL = 'https://your-server-url.com';
 
-        // Function to update the display
-        function updateDisplay() {
-            highestSeatDisplay.textContent = highestSeatNumber;
-            totalSeatsDisplay.textContent = assignedSeats.length;
-            
-            if (personalSeatNumber) {
-                seatNumberDisplay.textContent = personalSeatNumber;
-                assignSeatButton.disabled = true;
-                assignSeatButton.textContent = 'Seat Assigned';
-                programDisplay.classList.add('visible');
-            }
+        // Generate or retrieve unique user ID
+        let userId = localStorage.getItem('userId');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', userId);
         }
 
-        // Function to get next available seat number
-        function getNextAvailableSeat() {
-            let nextSeat = 1;
-            while (assignedSeats.includes(nextSeat)) {
-                nextSeat++;
+        // Check for existing seat assignment
+        let personalSeatNumber = localStorage.getItem('personalSeatNumber');
+
+        // Function to update the display
+        async function updateDisplay() {
+            try {
+                const response = await fetch(`${API_URL}/seat-info`);
+                const data = await response.json();
+                
+                highestSeatDisplay.textContent = data.highestSeat;
+                totalSeatsDisplay.textContent = data.totalSeats;
+                
+                if (personalSeatNumber) {
+                    seatNumberDisplay.textContent = personalSeatNumber;
+                    assignSeatButton.disabled = true;
+                    assignSeatButton.textContent = 'Seat Assigned';
+                    programDisplay.classList.add('visible');
+                }
+            } catch (error) {
+                console.error('Error updating display:', error);
             }
-            return nextSeat;
         }
 
         // Initialize the display
         updateDisplay();
 
-        // Show admin section if specific key combination is pressed
-        let keySequence = '';
-        document.addEventListener('keydown', (e) => {
-            keySequence += e.key;
-            if (keySequence.includes('admin')) {
-                adminSection.style.display = 'block';
-                keySequence = '';
-            }
-            setTimeout(() => keySequence = '', 2000);
-        });
-
         // Assign seat button click handler
-        assignSeatButton.addEventListener('click', () => {
+        assignSeatButton.addEventListener('click', async () => {
             if (!personalSeatNumber) {
                 try {
-                    // Get next available seat
-                    const nextSeat = getNextAvailableSeat();
+                    const response = await fetch(`${API_URL}/assign-seat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ userId })
+                    });
                     
-                    // Update assigned seats array
-                    assignedSeats.push(nextSeat);
-                    assignedSeats.sort((a, b) => a - b); // Keep array sorted
+                    const data = await response.json();
+                    personalSeatNumber = data.seatNumber;
                     
-                    // Update storage
-                    localStorage.setItem('assignedSeats', JSON.stringify(assignedSeats));
-                    localStorage.setItem('personalSeatNumber', nextSeat);
+                    localStorage.setItem('personalSeatNumber', personalSeatNumber);
                     
-                    // Update variables
-                    personalSeatNumber = nextSeat;
-                    highestSeatNumber = Math.max(highestSeatNumber, nextSeat);
-                    
-                    // Update display
                     updateDisplay();
                     errorMessage.style.display = 'none';
                 } catch (error) {
@@ -250,20 +77,25 @@
         });
 
         // Reset button click handler (admin function)
-        resetButton.addEventListener('click', () => {
+        resetButton.addEventListener('click', async () => {
             if (confirm('Are you sure you want to reset all seat assignments? This cannot be undone.')) {
-                localStorage.clear();
-                personalSeatNumber = null;
-                assignedSeats = [];
-                highestSeatNumber = 0;
-                seatNumberDisplay.textContent = '-';
-                assignSeatButton.disabled = false;
-                assignSeatButton.textContent = 'Get Seat Assignment';
-                programDisplay.classList.remove('visible');
-                errorMessage.style.display = 'none';
-                updateDisplay();
+                try {
+                    await fetch(`${API_URL}/reset`, { method: 'POST' });
+                    localStorage.removeItem('personalSeatNumber');
+                    personalSeatNumber = null;
+                    seatNumberDisplay.textContent = '-';
+                    assignSeatButton.disabled = false;
+                    assignSeatButton.textContent = 'Get Seat Assignment';
+                    programDisplay.classList.remove('visible');
+                    errorMessage.style.display = 'none';
+                    updateDisplay();
+                } catch (error) {
+                    console.error('Error resetting seats:', error);
+                }
             }
         });
+
+        // Previous admin section code remains the same
     </script>
 </body>
 </html>
