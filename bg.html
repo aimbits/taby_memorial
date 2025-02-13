@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Previous head section remains the same -->
+<body>
+    <!-- Previous HTML structure remains the same -->
+    <script>
+        // Initialize variables and get DOM elements
+        const assignSeatButton = document.getElementById('assignSeat');
+        const seatNumberDisplay = document.getElementById('seatNumber');
+        const programDisplay = document.getElementById('program');
+        const resetButton = document.getElementById('resetButton');
+        const highestSeatDisplay = document.getElementById('highestSeat');
+        const totalSeatsDisplay = document.getElementById('totalSeats');
+        const adminSection = document.getElementById('adminSection');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // API endpoint (replace with your actual server URL)
+        const API_URL = 'https://your-server-url.com';
+
+        // Generate or retrieve unique user ID
+        let userId = localStorage.getItem('userId');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', userId);
+        }
+
+        // Check for existing seat assignment
+        let personalSeatNumber = localStorage.getItem('personalSeatNumber');
+
+        // Function to update the display
+        async function updateDisplay() {
+            try {
+                const response = await fetch(`${API_URL}/seat-info`);
+                const data = await response.json();
+                
+                highestSeatDisplay.textContent = data.highestSeat;
+                totalSeatsDisplay.textContent = data.totalSeats;
+                
+                if (personalSeatNumber) {
+                    seatNumberDisplay.textContent = personalSeatNumber;
+                    assignSeatButton.disabled = true;
+                    assignSeatButton.textContent = 'Seat Assigned';
+                    programDisplay.classList.add('visible');
+                }
+            } catch (error) {
+                console.error('Error updating display:', error);
+            }
+        }
+
+        // Initialize the display
+        updateDisplay();
+
+        // Assign seat button click handler
+        assignSeatButton.addEventListener('click', async () => {
+            if (!personalSeatNumber) {
+                try {
+                    const response = await fetch(`${API_URL}/assign-seat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ userId })
+                    });
+                    
+                    const data = await response.json();
+                    personalSeatNumber = data.seatNumber;
+                    
+                    localStorage.setItem('personalSeatNumber', personalSeatNumber);
+                    
+                    updateDisplay();
+                    errorMessage.style.display = 'none';
+                } catch (error) {
+                    errorMessage.style.display = 'block';
+                    console.error('Error assigning seat:', error);
+                }
+            }
+        });
+
+        // Reset button click handler (admin function)
+        resetButton.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to reset all seat assignments? This cannot be undone.')) {
+                try {
+                    await fetch(`${API_URL}/reset`, { method: 'POST' });
+                    localStorage.removeItem('personalSeatNumber');
+                    personalSeatNumber = null;
+                    seatNumberDisplay.textContent = '-';
+                    assignSeatButton.disabled = false;
+                    assignSeatButton.textContent = 'Get Seat Assignment';
+                    programDisplay.classList.remove('visible');
+                    errorMessage.style.display = 'none';
+                    updateDisplay();
+                } catch (error) {
+                    console.error('Error resetting seats:', error);
+                }
+            }
+        });
+
+        // Previous admin section code remains the same
+    </script>
+</body>
+</html>
