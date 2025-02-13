@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorial Service Seating</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .seat-assignment {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        #seatNumber {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #2c3e50;
+        }
+
+        .program {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            border-top: 2px solid #eee;
+        }
+
+        .program.visible {
+            display: block;
+        }
+
+        .program-item {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .program-time {
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        #resetButton {
+            background-color: #e74c3c;
+            font-size: 14px;
+            padding: 8px 16px;
+            margin-top: 30px;
+        }
+
+        #resetButton:hover {
+            background-color: #c0392b;
+        }
+
+        .admin-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Memorial Service</h1>
+        <h2>Seating Assignment</h2>
+        
+        <div class="seat-assignment">
+            <p>Your assigned seat number is:</p>
+            <p id="seatNumber">-</p>
+        </div>
+
+        <button id="assignSeat">Get Seat Assignment</button>
+
+        <div class="program" id="program">
+            <h2>Memorial Service Program</h2>
+            
+            <div class="program-item">
+                <span class="program-time">2:00 PM</span> - Opening Prayer
+            </div>
+            
+            <div class="program-item">
+                <span class="program-time">2:15 PM</span> - Welcome Address
+            </div>
+            
+            <div class="program-item">
+                <span class="program-time">2:30 PM</span> - Musical Tribute
+            </div>
+            
+            <div class="program-item">
+                <span class="program-time">2:45 PM</span> - Remembrance Speeches
+            </div>
+            
+            <div class="program-item">
+                <span class="program-time">3:15 PM</span> - Photo Montage
+            </div>
+            
+            <div class="program-item">
+                <span class="program-time">3:30 PM</span> - Moment of Silence
+            </div>
+            
+            <div class="program-item">
+                <span class="program-time">3:45 PM</span> - Closing Remarks
+            </div>
+            
+            <div class="program-item">
+                <span class="program-time">4:00 PM</span> - Benediction
+            </div>
+        </div>
+
+        <!-- Admin section (hidden by default) -->
+        <div class="admin-section" id="adminSection" style="display: none;">
+            <h3>Admin Controls</h3>
+            <button id="resetButton">Reset All Seat Assignments</button>
+            <p>Current highest seat number: <span id="highestSeat">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize variables and get DOM elements
+        const assignSeatButton = document.getElementById('assignSeat');
+        const seatNumberDisplay = document.getElementById('seatNumber');
+        const programDisplay = document.getElementById('program');
+        const resetButton = document.getElementById('resetButton');
+        const highestSeatDisplay = document.getElementById('highestSeat');
+        const adminSection = document.getElementById('adminSection');
+
+        // Check for existing seat assignment
+        let personalSeatNumber = localStorage.getItem('personalSeatNumber');
+        let highestSeatNumber = localStorage.getItem('highestSeatNumber') || 0;
+
+        // Function to update the display
+        function updateDisplay() {
+            highestSeatDisplay.textContent = highestSeatNumber;
+            
+            if (personalSeatNumber) {
+                seatNumberDisplay.textContent = personalSeatNumber;
+                assignSeatButton.disabled = true;
+                assignSeatButton.textContent = 'Seat Assigned';
+                programDisplay.classList.add('visible');
+            }
+        }
+
+        // Initialize the display
+        updateDisplay();
+
+        // Show admin section if specific key combination is pressed
+        let keySequence = '';
+        document.addEventListener('keydown', (e) => {
+            keySequence += e.key;
+            if (keySequence.includes('admin')) {
+                adminSection.style.display = 'block';
+                keySequence = '';
+            }
+            // Reset sequence after 2 seconds of no input
+            setTimeout(() => keySequence = '', 2000);
+        });
+
+        // Assign seat button click handler
+        assignSeatButton.addEventListener('click', () => {
+            if (!personalSeatNumber) {
+                // Increment highest seat number
+                highestSeatNumber = parseInt(highestSeatNumber) + 1;
+                
+                // Save both personal and highest seat numbers
+                personalSeatNumber = highestSeatNumber;
+                localStorage.setItem('personalSeatNumber', personalSeatNumber);
+                localStorage.setItem('highestSeatNumber', highestSeatNumber);
+                
+                // Update display
+                updateDisplay();
+            }
+        });
+
+        // Reset button click handler (admin function)
+        resetButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset all seat assignments? This cannot be undone.')) {
+                localStorage.clear();
+                personalSeatNumber = null;
+                highestSeatNumber = 0;
+                seatNumberDisplay.textContent = '-';
+                assignSeatButton.disabled = false;
+                assignSeatButton.textContent = 'Get Seat Assignment';
+                programDisplay.classList.remove('visible');
+                updateDisplay();
+            }
+        });
+    </script>
+</body>
+</html>
