@@ -1,3 +1,63 @@
+
+
+Start new chat
+Starred
+Star chats you use often
+Recents
+(New chat)
+Continuous Typing in React Form Fields
+Referencing Other Conversations
+Memorial Service Registration Site
+View all
+Free plan
+
+IW
+benignantmike@gmail.com
+Help & support
+IW
+
+
+Untitled
+
+
+
+What can I help you with today?
+
+looking at this attached code. How do I use the admin functionality without making it available to the public
+
+No file chosen
+
+
+
+3.5 Sonnet
+
+Choose style
+Use shift + return for new line
+You are out of free messages until 8:00 AM
+Subscribe to Pro
+
+
+<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Memorial Service Seating</title> <style>
+pasted
+Chat controls
+
+3.5 Sonnet
+Most intelligent model Learn more
+
+Content
+No content added yet
+Add images, PDFs, docs, spreadsheets, and more to summarize, analyze, and query content with Claude.
+Chat styles
+Font
+
+Default
+
+Pasted content
+
+8.65 KB •269 lines
+•
+Formatting may be inconsistent from source
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +65,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memorial Service Seating</title>
     <style>
+        /* Previous styles remain the same */
         body {
             font-family: 'Georgia', serif;
             max-width: 800px;
@@ -101,11 +162,18 @@
             padding-top: 20px;
             border-top: 2px dashed #eee;
         }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin: 10px 0;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Mrs Tabitha Ufedo'Ojo Memorial Service</h1>
+        <h1>Memorial Service</h1>
         <h2>Seating Assignment</h2>
         
         <div class="seat-assignment">
@@ -113,6 +181,7 @@
             <p id="seatNumber">-</p>
         </div>
 
+        <p id="errorMessage" class="error-message">Unable to assign seat at this time. Please try again.</p>
         <button id="assignSeat">Get Seat Assignment</button>
 
         <div class="program" id="program">
@@ -151,11 +220,11 @@
             </div>
         </div>
 
-        <!-- Admin section (hidden by default) -->
         <div class="admin-section" id="adminSection" style="display: none;">
             <h3>Admin Controls</h3>
             <button id="resetButton">Reset All Seat Assignments</button>
             <p>Current highest seat number: <span id="highestSeat">0</span></p>
+            <p>Total seats assigned: <span id="totalSeats">0</span></p>
         </div>
     </div>
 
@@ -166,15 +235,19 @@
         const programDisplay = document.getElementById('program');
         const resetButton = document.getElementById('resetButton');
         const highestSeatDisplay = document.getElementById('highestSeat');
+        const totalSeatsDisplay = document.getElementById('totalSeats');
         const adminSection = document.getElementById('adminSection');
+        const errorMessage = document.getElementById('errorMessage');
 
-        // Check for existing seat assignment
+        // Check for existing seat assignment and initialize storage
         let personalSeatNumber = localStorage.getItem('personalSeatNumber');
-        let highestSeatNumber = localStorage.getItem('highestSeatNumber') || 0;
+        let assignedSeats = JSON.parse(localStorage.getItem('assignedSeats') || '[]');
+        let highestSeatNumber = Math.max(0, ...assignedSeats);
 
         // Function to update the display
         function updateDisplay() {
             highestSeatDisplay.textContent = highestSeatNumber;
+            totalSeatsDisplay.textContent = assignedSeats.length;
             
             if (personalSeatNumber) {
                 seatNumberDisplay.textContent = personalSeatNumber;
@@ -182,6 +255,15 @@
                 assignSeatButton.textContent = 'Seat Assigned';
                 programDisplay.classList.add('visible');
             }
+        }
+
+        // Function to get next available seat number
+        function getNextAvailableSeat() {
+            let nextSeat = 1;
+            while (assignedSeats.includes(nextSeat)) {
+                nextSeat++;
+            }
+            return nextSeat;
         }
 
         // Initialize the display
@@ -195,23 +277,35 @@
                 adminSection.style.display = 'block';
                 keySequence = '';
             }
-            // Reset sequence after 2 seconds of no input
             setTimeout(() => keySequence = '', 2000);
         });
 
         // Assign seat button click handler
         assignSeatButton.addEventListener('click', () => {
             if (!personalSeatNumber) {
-                // Increment highest seat number
-                highestSeatNumber = parseInt(highestSeatNumber) + 1;
-                
-                // Save both personal and highest seat numbers
-                personalSeatNumber = highestSeatNumber;
-                localStorage.setItem('personalSeatNumber', personalSeatNumber);
-                localStorage.setItem('highestSeatNumber', highestSeatNumber);
-                
-                // Update display
-                updateDisplay();
+                try {
+                    // Get next available seat
+                    const nextSeat = getNextAvailableSeat();
+                    
+                    // Update assigned seats array
+                    assignedSeats.push(nextSeat);
+                    assignedSeats.sort((a, b) => a - b); // Keep array sorted
+                    
+                    // Update storage
+                    localStorage.setItem('assignedSeats', JSON.stringify(assignedSeats));
+                    localStorage.setItem('personalSeatNumber', nextSeat);
+                    
+                    // Update variables
+                    personalSeatNumber = nextSeat;
+                    highestSeatNumber = Math.max(highestSeatNumber, nextSeat);
+                    
+                    // Update display
+                    updateDisplay();
+                    errorMessage.style.display = 'none';
+                } catch (error) {
+                    errorMessage.style.display = 'block';
+                    console.error('Error assigning seat:', error);
+                }
             }
         });
 
@@ -220,11 +314,13 @@
             if (confirm('Are you sure you want to reset all seat assignments? This cannot be undone.')) {
                 localStorage.clear();
                 personalSeatNumber = null;
+                assignedSeats = [];
                 highestSeatNumber = 0;
                 seatNumberDisplay.textContent = '-';
                 assignSeatButton.disabled = false;
                 assignSeatButton.textContent = 'Get Seat Assignment';
                 programDisplay.classList.remove('visible');
+                errorMessage.style.display = 'none';
                 updateDisplay();
             }
         });
